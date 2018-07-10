@@ -854,14 +854,17 @@ namespace tesseract {
     return nil;
 }
 
-- (NSData *)recognizedPDFForImages:(NSArray*)images {
+- (NSData *)recognizedPDFForImages:(NSArray*)images outputbase:(NSString*) outputbase {
   
     if (!self.isEngineConfigured) {
         return nil;
     }
+	
+	bool textonly;
+	_tesseract->GetBoolVariable("textonly_pdf", &textonly);
     
     NSString *path = [self.absoluteDataPath stringByAppendingPathComponent:@"tessdata"];
-    tesseract::TessPDFRenderer *renderer = new tesseract::TessPDFRenderer(path.fileSystemRepresentation);
+	tesseract::TessPDFRenderer *renderer = new tesseract::TessPDFRenderer(outputbase.fileSystemRepresentation, path.fileSystemRepresentation, textonly);
     
     // Begin producing output
     const char* kUnknownTitle = "Unknown Title";
@@ -893,11 +896,7 @@ namespace tesseract {
         return nil; // LCOV_EXCL_LINE
     }
     
-    const char *pdfData = NULL;
-    int pdfDataLength = 0;
-    renderer->GetOutput(&pdfData, &pdfDataLength);
-    
-    NSData *data = [NSData dataWithBytes:pdfData length:pdfDataLength];
+    NSData *data = [NSData dataWithContentsOfFile:outputbase];
     return data;
 }
 
@@ -946,7 +945,7 @@ namespace tesseract {
     }
 
     if (self.maximumRecognitionTime > FLT_EPSILON) {
-        _monitor->set_deadline_msecs((inT32)(self.maximumRecognitionTime * 1000));
+        _monitor->set_deadline_msecs((int32_t)(self.maximumRecognitionTime * 1000));
     }
 
     self.recognized = NO;
