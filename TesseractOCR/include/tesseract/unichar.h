@@ -17,18 +17,22 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifndef TESSERACT_CCUTIL_UNICHAR_H__
-#define TESSERACT_CCUTIL_UNICHAR_H__
+#ifndef TESSERACT_CCUTIL_UNICHAR_H_
+#define TESSERACT_CCUTIL_UNICHAR_H_
 
 #include <memory.h>
 #include <string.h>
+#include <string>
+#include <vector>
+#include "platform.h"
 
 // Maximum number of characters that can be stored in a UNICHAR. Must be
 // at least 4. Must not exceed 31 without changing the coding of length.
 #define UNICHAR_LEN 30
 
+// TODO(rays) Move these to the tesseract namespace.
 // A UNICHAR_ID is the unique id of a unichar.
-typedef int UNICHAR_ID;
+using UNICHAR_ID = int;
 
 // A variable to indicate an invalid or uninitialized unichar id.
 static const int INVALID_UNICHAR_ID = -1;
@@ -43,9 +47,13 @@ enum StrongScriptDirection {
                           // and right-to-left characters.
 };
 
+namespace tesseract {
+
+using char32 = signed int;
+
 // The UNICHAR class holds a single classification result. This may be
 // a single Unicode character (stored as between 1 and 4 utf8 bytes) or
-// multple Unicode characters representing the NFKC expansion of a ligature
+// multiple Unicode characters representing the NFKC expansion of a ligature
 // such as fi, ffl etc. These are also stored as utf8.
 class UNICHAR {
  public:
@@ -72,7 +80,7 @@ class UNICHAR {
     return len >=0 && len < UNICHAR_LEN ? len : UNICHAR_LEN;
   }
 
-  // Get a UTF8 string, but NOT NULL terminated.
+  // Get a UTF8 string, but NOT nullptr terminated.
   const char* utf8() const {
     return chars;
   }
@@ -98,12 +106,12 @@ class UNICHAR {
   //     tprintf("Char = %s\n", buf);
   //   }
   class const_iterator {
-    typedef const_iterator CI;
+    using CI = const_iterator ;
 
    public:
     // Step to the next UTF8 character.
     // If the current position is at an illegal UTF8 character, then print an
-    // error message and step by one byte. If the current position is at a NULL
+    // error message and step by one byte. If the current position is at a nullptr
     // value, don't step past it.
     const_iterator& operator++();
 
@@ -121,6 +129,8 @@ class UNICHAR {
     // Returns the number of bytes of the current codepoint. Returns 1 if the
     // current position is at an illegal UTF8 value.
     int utf8_len() const;
+    // Returns true if the UTF-8 encoding at the current position is legal.
+    bool is_legal() const;
 
     // Return the pointer into the string at the current position.
     const char* utf8_data() const { return it_; }
@@ -146,6 +156,13 @@ class UNICHAR {
   static const_iterator begin(const char* utf8_str, const int byte_length);
   static const_iterator end(const char* utf8_str, const int byte_length);
 
+  // Converts a utf-8 string to a vector of unicodes.
+  // Returns an empty vector if the input contains invalid UTF-8.
+  static std::vector<char32> UTF8ToUTF32(const char* utf8_str);
+  // Converts a vector of unicodes to a utf8 string.
+  // Returns an empty string if the input contains an invalid unicode.
+  static std::string UTF32ToUTF8(const std::vector<char32>& str32);
+
  private:
   // A UTF-8 representation of 1 or more Unicode characters.
   // The last element (chars[UNICHAR_LEN - 1]) is a length if
@@ -153,4 +170,6 @@ class UNICHAR {
   char chars[UNICHAR_LEN];
 };
 
-#endif  // TESSERACT_CCUTIL_UNICHAR_H__
+}  // namespace tesseract
+
+#endif  // TESSERACT_CCUTIL_UNICHAR_H_

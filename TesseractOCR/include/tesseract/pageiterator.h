@@ -18,8 +18,8 @@
 //
 ///////////////////////////////////////////////////////////////////////
 
-#ifndef TESSERACT_CCMAIN_PAGEITERATOR_H__
-#define TESSERACT_CCMAIN_PAGEITERATOR_H__
+#ifndef TESSERACT_CCMAIN_PAGEITERATOR_H_
+#define TESSERACT_CCMAIN_PAGEITERATOR_H_
 
 #include "publictypes.h"
 #include "platform.h"
@@ -86,7 +86,7 @@ class TESS_API PageIterator {
   // ============= Moving around within the page ============.
 
   /**
-   * Moves the iterator to point to the start of the page to begin an 
+   * Moves the iterator to point to the start of the page to begin an
    * iteration.
    */
   virtual void Begin();
@@ -180,6 +180,21 @@ class TESS_API PageIterator {
   // relate to the original (full) image, rather than the rectangle.
 
   /**
+   * Controls what to include in a bounding box. Bounding boxes of all levels
+   * between RIL_WORD and RIL_BLOCK can include or exclude potential diacritics.
+   * Between layout analysis and recognition, it isn't known where all
+   * diacritics belong, so this control is used to include or exclude some
+   * diacritics that are above or below the main body of the word. In most cases
+   * where the placement is obvious, and after recognition, it doesn't make as
+   * much difference, as the diacritics will already be included in the word.
+   */
+  void SetBoundingBoxComponents(bool include_upper_dots,
+                                bool include_lower_dots) {
+    include_upper_dots_ = include_upper_dots;
+    include_lower_dots_ = include_lower_dots;
+  }
+
+  /**
    * Returns the bounding rectangle of the current object at the given level.
    * See comment on coordinate system above.
    * Returns false if there is no such object at the current position.
@@ -213,7 +228,7 @@ class TESS_API PageIterator {
    * Returns the polygon outline of the current block. The returned Pta must
    * be ptaDestroy-ed after use. Note that the returned Pta lists the vertices
    * of the polygon, and the last edge is the line segment between the last
-   * point and the first point. NULL will be returned if the iterator is
+   * point and the first point. nullptr will be returned if the iterator is
    * at the end of the document or layout analysis was not used.
    */
   Pta* BlockPolygon() const;
@@ -234,9 +249,10 @@ class TESS_API PageIterator {
    * padding, so the top-left position of the returned image is returned
    * in (left,top). These will most likely not match the coordinates
    * returned by BoundingBox.
+   * If you do not supply an original image, you will get a binary one.
    * Use pixDestroy to delete the image after use.
    */
-  Pix* GetImage(PageIteratorLevel level, int padding,
+  Pix* GetImage(PageIteratorLevel level, int padding, Pix* original_img,
                 int* left, int* top) const;
 
   /**
@@ -294,7 +310,7 @@ class TESS_API PageIterator {
                      bool *is_crown,
                      int *first_line_indent) const;
 
-  // If the current WERD_RES (it_->word()) is not NULL, sets the BlamerBundle
+  // If the current WERD_RES (it_->word()) is not nullptr, sets the BlamerBundle
   // of the current word to the given pointer (takes ownership of the pointer)
   // and returns true.
   // Can only be used when iterating on the word level.
@@ -318,7 +334,7 @@ class TESS_API PageIterator {
   PAGE_RES_IT* it_;
   /**
    * The current input WERD being iterated. If there is an output from OCR,
-   * then word_ is NULL. Owned by the API
+   * then word_ is nullptr. Owned by the API
    */
   WERD* word_;
   /** The length of the current word_. */
@@ -326,11 +342,14 @@ class TESS_API PageIterator {
   /** The current blob index within the word. */
   int blob_index_;
   /**
-   * Iterator to the blobs within the word. If NULL, then we are iterating
+   * Iterator to the blobs within the word. If nullptr, then we are iterating
    * OCR results in the box_word.
    * Owned by this ResultIterator.
    */
   C_BLOB_IT* cblob_it_;
+  /** Control over what to include in bounding boxes. */
+  bool include_upper_dots_;
+  bool include_lower_dots_;
   /** Parameters saved from the Thresholder. Needed to rebuild coordinates.*/
   int scale_;
   int scaled_yres_;
@@ -342,4 +361,4 @@ class TESS_API PageIterator {
 
 }  // namespace tesseract.
 
-#endif  // TESSERACT_CCMAIN_PAGEITERATOR_H__
+#endif  // TESSERACT_CCMAIN_PAGEITERATOR_H_
